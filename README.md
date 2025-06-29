@@ -5,7 +5,7 @@
 </div>
 
 > 🎬 **MoonTV** 是一个开箱即用的、跨平台的影视聚合播放器。它基于 **Next.js 14** + **Tailwind&nbsp;CSS** + **TypeScript** 构建，支持多资源搜索、在线播放、收藏同步、播放记录、本地/云端存储，让你可以随时随地畅享海量免费影视内容。
-
+基于 [MoonTV](https://github.com/senshinya/MoonTV) 二次修改开发，感谢senshinya提供的项目
 <div align="center">
 
 ![Next.js](https://img.shields.io/badge/Next.js-14-000?logo=nextdotjs)
