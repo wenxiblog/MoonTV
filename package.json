@@ -1,10 +1,10 @@
 {
-  "name": "moontv",
+  "name": "warhuttv",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm gen:runtime && next dev -H 0.0.0.0",
-    "build": "pnpm gen:runtime && next build",
+    "dev": "next dev -H 0.0.0.0",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "eslint src --fix && pnpm format",
@@ -14,31 +14,25 @@
     "test": "jest",
     "format": "prettier -w .",
     "format:check": "prettier -c .",
-    "gen:runtime": "node scripts/convert-config.js",
     "postbuild": "next-sitemap --config next-sitemap.config.js",
-    "prepare": "husky install",
-    "pages:build": "pnpm gen:runtime && next build && next-sitemap --config next-sitemap.config.js && npx @cloudflare/next-on-pages --experimental-minify"
+    "prepare": "husky install"
   },
   "dependencies": {
-    "@cloudflare/next-on-pages": "^1.13.12",
     "@headlessui/react": "^2.2.4",
     "@heroicons/react": "^2.2.0",
-    "@vidstack/react": "^1.12.13",
+    "artplayer": "^5.2.3",
     "clsx": "^2.0.0",
     "framer-motion": "^12.18.1",
     "hls.js": "^1.6.5",
     "lucide-react": "^0.438.0",
-    "media-icons": "^1.1.5",
     "next": "^14.2.23",
-    "next-pwa": "^5.6.0",
-    "next-themes": "^0.4.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^5.4.0",
     "swiper": "^11.2.8",
     "tailwind-merge": "^2.6.0",
-    "vidstack": "^0.6.15",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "next-pwa": "^5.6.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^16.3.0",
@@ -77,5 +71,6 @@
     "**/*.{json,css,scss,md,webmanifest}": [
       "prettier -w"
     ]
-  }
+  },
+  "packageManager": "pnpm@10.12.3+sha512.467df2c586056165580ad6dfb54ceaad94c5a30f80893ebdec5a44c5aa73c205ae4a5bb9d5ed6bb84ea7c249ece786642bbb49d06a307df218d03da41c317417"
 }
