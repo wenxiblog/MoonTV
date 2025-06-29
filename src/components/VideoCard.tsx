@@ -1,284 +1,301 @@
-import { Heart } from 'lucide-react';
-import Image from 'next/image';
+import {
+  Clover,
+  Film,
+  Github,
+  Home,
+  Menu,
+  MessageCircleHeart,
+  MountainSnow,
+  Search,
+  Star,
+  Swords,
+  Tv,
+  VenetianMask,
+} from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react';
 
-import { deletePlayRecord, isFavorited, toggleFavorite } from '@/lib/db.client';
-
-interface VideoCardProps {
-  id: string;
-  source: string;
-  title: string;
-  poster: string;
-  episodes?: number;
-  source_name: string;
-  progress?: number;
-  year?: string;
-  from?: string;
-  currentEpisode?: number;
-  onDelete?: () => void;
+interface SidebarContextType {
+  isCollapsed: boolean;
 }
 
-function CheckCircleCustom() {
-  return (
-    <span className='inline-flex items-center justify-center'>
-      <svg
-        width='24'
-        height='24'
-        viewBox='0 0 32 32'
-        fill='none'
-        xmlns='http://www.w3.org/2000/svg'
-      >
-        <circle cx='16' cy='16' r='13' stroke='white' strokeWidth='2' />
-        <path
-          d='M11 16.5L15 20L21 13.5'
-          stroke='white'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-        />
-      </svg>
+const SidebarContext = createContext<SidebarContextType>({
+  isCollapsed: false,
+});
+
+export const useSidebar = () => useContext(SidebarContext);
+
+// 可替换为你自己的 logo 图片
+const Logo = () => (
+  <Link
+    href='/'
+    className='flex items-center justify-center h-16 select-none hover:opacity-80 transition-opacity duration-200'
+  >
+    <span className='text-2xl font-bold text-green-600 tracking-tight'>
+      WarHutTV
     </span>
-  );
+  </Link>
+);
+
+interface SidebarProps {
+  onToggle?: (collapsed: boolean) => void;
+  activePath?: string;
 }
 
-function PlayCircleSolid({
-  className = '',
-  fillColor = 'none',
-}: {
-  className?: string;
-  fillColor?: string;
-}) {
-  return (
-    <svg
-      width='44'
-      height='44'
-      viewBox='0 0 44 44'
-      fill='none'
-      xmlns='http://www.w3.org/2000/svg'
-      className={className}
-    >
-      <circle
-        cx='22'
-        cy='22'
-        r='20'
-        stroke='white'
-        strokeWidth='1.5'
-        fill={fillColor}
-      />
-      <polygon points='19,15 19,29 29,22' fill='white' />
-    </svg>
-  );
+// 在浏览器环境下通过全局变量缓存折叠状态，避免组件重新挂载时出现初始值闪烁
+declare global {
+  interface Window {
+    __sidebarCollapsed?: boolean;
+  }
 }
 
-export default function VideoCard({
-  id,
-  title,
-  poster,
-  episodes,
-  source,
-  source_name,
-  progress,
-  year,
-  from,
-  currentEpisode,
-  onDelete,
-}: VideoCardProps) {
-  const [playHover, setPlayHover] = useState(false);
-  const [favorited, setFavorited] = useState(false);
+const Sidebar = ({ onToggle, activePath = '/' }: SidebarProps) => {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // 若同一次 SPA 会话中已经读取过折叠状态，则直接复用，避免闪烁
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.__sidebarCollapsed === 'boolean'
+    ) {
+      return window.__sidebarCollapsed;
+    }
+    return false; // 默认展开
+  });
 
-  // 检查初始收藏状态
-  useEffect(() => {
-    (async () => {
-      try {
-        const fav = await isFavorited(source, id);
-        setFavorited(fav);
-      } catch (err) {
-        /* eslint-disable no-console */
-        console.error('检查收藏状态失败:', err);
+  // 首次挂载时读取 localStorage，以便刷新后仍保持上次的折叠状态
+  useLayoutEffect(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    if (saved !== null) {
+      const val = JSON.parse(saved);
+      setIsCollapsed(val);
+      window.__sidebarCollapsed = val;
+    }
+  }, []);
+
+  // 当折叠状态变化时，同步到 <html> data 属性，供首屏 CSS 使用
+  useLayoutEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isCollapsed) {
+        document.documentElement.dataset.sidebarCollapsed = 'true';
+      } else {
+        delete document.documentElement.dataset.sidebarCollapsed;
       }
-    })();
-    // 仅在组件挂载或 source/id 变化时运行
-  }, [source, id]);
-
-  // 切换收藏状态
-  const handleToggleFavorite = async (
-    e: React.MouseEvent<HTMLSpanElement | SVGElement, MouseEvent>
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    try {
-      const newState = await toggleFavorite(source, id, {
-        title,
-        source_name,
-        year: year || '',
-        cover: poster,
-        total_episodes: episodes ?? 1,
-        save_time: Date.now(),
-      });
-      setFavorited(newState);
-    } catch (err) {
-      /* eslint-disable no-console */
-      console.error('切换收藏失败:', err);
     }
+  }, [isCollapsed]);
+
+  const [active, setActive] = useState(activePath);
+
+  useEffect(() => {
+    // 优先使用传入的 activePath
+    if (activePath) {
+      setActive(activePath);
+    } else {
+      // 否则使用当前路径
+      const getCurrentFullPath = () => {
+        const queryString = searchParams.toString();
+        return queryString ? `${pathname}?${queryString}` : pathname;
+      };
+      const fullPath = getCurrentFullPath();
+      setActive(fullPath);
+    }
+  }, [activePath, pathname, searchParams]);
+
+  const handleToggle = useCallback(() => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(newState));
+    if (typeof window !== 'undefined') {
+      window.__sidebarCollapsed = newState;
+    }
+    onToggle?.(newState);
+  }, [isCollapsed, onToggle]);
+
+  const handleSearchClick = useCallback(() => {
+    router.push('/search');
+  }, [router]);
+
+  const contextValue = {
+    isCollapsed,
   };
 
-  // 删除对应播放记录
-  const handleDeleteRecord = async (
-    e: React.MouseEvent<HTMLSpanElement | SVGElement, MouseEvent>
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    try {
-      await deletePlayRecord(source, id);
-
-      // 通知父组件更新
-      onDelete?.();
-    } catch (err) {
-      /* eslint-disable no-console */
-      console.error('删除播放记录失败:', err);
-    }
-  };
-
-  const hideCheckCircle = from === 'favorites' || from === 'search';
+  const menuItems = [
+    {
+      icon: Film,
+      label: '热门电影',
+      href: '/douban?type=movie&tag=热门&title=热门电影',
+    },
+    {
+      icon: Tv,
+      label: '热门剧集',
+      href: '/douban?type=tv&tag=热门&title=热门剧集',
+    },
+    {
+      icon: Star,
+      label: '豆瓣 Top250',
+      href: '/douban?type=movie&tag=top250&title=豆瓣 Top250',
+    },
+    {
+      icon: Clover,
+      label: '综艺',
+      href: '/douban?type=tv&tag=综艺&title=综艺',
+    },
+    { icon: Swords, label: '美剧', href: '/douban?type=tv&tag=美剧' },
+    {
+      icon: MessageCircleHeart,
+      label: '韩剧',
+      href: '/douban?type=tv&tag=韩剧',
+    },
+    { icon: MountainSnow, label: '日剧', href: '/douban?type=tv&tag=日剧' },
+    { icon: VenetianMask, label: '日漫', href: '/douban?type=tv&tag=日漫' },
+    {
+      icon: Github,
+      label: 'MoonTV',
+      href: 'https://github.com/senshinya/MoonTV',
+      target: '_blank',
+    },
+  ];
 
   return (
-    <Link
-      href={`/detail?source=${source}&id=${id}&title=${encodeURIComponent(
-        title
-      )}${year ? `&year=${year}` : ''}${from ? `&from=${from}` : ''}`}
-    >
-      <div className='group relative w-full rounded-lg bg-transparent shadow-none flex flex-col'>
-        {/* 海报图片 - 2:3 比例 */}
-        <div className='relative aspect-[2/3] w-full overflow-hidden rounded-md'>
-          <Image
-            src={poster}
-            alt={title}
-            fill
-            className='object-cover'
-            unoptimized
-          />
-
-          {/* Hover 效果 */}
-          <div className='absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center group pointer-events-none'>
-            <div className='absolute inset-0 flex items-center justify-center pointer-events-auto'>
+    <SidebarContext.Provider value={contextValue}>
+      {/* 在移动端隐藏侧边栏 */}
+      <div className='hidden md:flex'>
+        <aside
+          data-sidebar
+          className={`fixed top-0 left-0 h-screen bg-white/40 backdrop-blur-xl transition-all duration-300 border-r border-gray-200/50 z-10 shadow-lg ${
+            isCollapsed ? 'w-16' : 'w-64'
+          }`}
+          style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.3)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}
+        >
+          <div className='flex h-full flex-col'>
+            {/* 顶部 Logo 区域 */}
+            <div className='relative h-16'>
               <div
-                className={`transition-all duration-200 pointer-events-auto ${
-                  playHover ? 'scale-110' : ''
+                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${
+                  isCollapsed ? 'opacity-0' : 'opacity-100'
                 }`}
-                style={{ cursor: 'pointer' }}
+              >
+                <div className='w-[calc(100%-4rem)] flex justify-center'>
+                  {!isCollapsed && <Logo />}
+                </div>
+              </div>
+              <button
+                onClick={handleToggle}
+                className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100/50 transition-colors duration-200 z-10 ${
+                  isCollapsed ? 'left-1/2 -translate-x-1/2' : 'right-2'
+                }`}
+              >
+                <Menu className='h-4 w-4' />
+              </button>
+            </div>
+
+            {/* 首页和搜索导航 */}
+            <nav className='px-2 mt-4 space-y-1'>
+              <Link
+                href='/'
+                onClick={() => setActive('/')}
+                data-active={active === '/'}
+                className={`group flex items-center rounded-lg px-2 py-2 pl-4 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 font-medium transition-colors duration-200 min-h-[40px] ${
+                  isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
+                } gap-3 justify-start`}
+              >
+                <div className='w-4 h-4 flex items-center justify-center'>
+                  <Home className='h-4 w-4 text-gray-500 group-hover:text-green-600 data-[active=true]:text-green-700' />
+                </div>
+                {!isCollapsed && (
+                  <span className='whitespace-nowrap transition-opacity duration-200 opacity-100'>
+                    首页
+                  </span>
+                )}
+              </Link>
+              <Link
+                href='/search'
                 onClick={(e) => {
                   e.preventDefault();
-                  e.stopPropagation();
-                  router.push(
-                    `/play?source=${source}&id=${id}&title=${encodeURIComponent(
-                      title
-                    )}${year ? `&year=${year}` : ''}`
-                  );
+                  handleSearchClick();
+                  setActive('/search');
                 }}
-                onMouseEnter={() => setPlayHover(true)}
-                onMouseLeave={() => setPlayHover(false)}
+                data-active={active === '/search'}
+                className={`group flex items-center rounded-lg px-2 py-2 pl-4 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 font-medium transition-colors duration-200 min-h-[40px] ${
+                  isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
+                } gap-3 justify-start`}
               >
-                <PlayCircleSolid fillColor={playHover ? '#22c55e' : 'none'} />
+                <div className='w-4 h-4 flex items-center justify-center'>
+                  <Search className='h-4 w-4 text-gray-500 group-hover:text-green-600 data-[active=true]:text-green-700' />
+                </div>
+                {!isCollapsed && (
+                  <span className='whitespace-nowrap transition-opacity duration-200 opacity-100'>
+                    搜索
+                  </span>
+                )}
+              </Link>
+            </nav>
+
+            {/* 菜单项 */}
+            <div className='flex-1 overflow-y-auto px-2 pt-4'>
+              <div className='space-y-1'>
+                {menuItems.map((item) => {
+                  // 检查当前路径是否匹配这个菜单项
+                  const typeMatch = item.href.match(/type=([^&]+)/)?.[1];
+                  const tagMatch = item.href.match(/tag=([^&]+)/)?.[1];
+
+                  // 解码URL以进行正确的比较
+                  const decodedActive = decodeURIComponent(active);
+                  const decodedItemHref = decodeURIComponent(item.href);
+
+                  const isActive =
+                    decodedActive === decodedItemHref ||
+                    (decodedActive.startsWith('/douban') &&
+                      decodedActive.includes(`type=${typeMatch}`) &&
+                      decodedActive.includes(`tag=${tagMatch}`));
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      target={item.target ?? '_self'}
+                      onClick={() => setActive(item.href)}
+                      data-active={isActive}
+                      className={`group flex items-center rounded-lg px-2 py-2 pl-4 text-gray-700 hover:bg-gray-100/30 hover:text-green-600 data-[active=true]:bg-green-500/20 data-[active=true]:text-green-700 transition-colors duration-200 min-h-[40px] ${
+                        isCollapsed ? 'w-full max-w-none mx-0' : 'mx-0'
+                      } gap-3 justify-start`}
+                    >
+                      <div className='w-4 h-4 flex items-center justify-center'>
+                        <item.icon className='h-4 w-4 text-gray-500 group-hover:text-green-600 group-data-[active=true]:text-green-700' />
+                      </div>
+                      {!isCollapsed && (
+                        <span className='whitespace-nowrap transition-opacity duration-200 opacity-100'>
+                          {item.label}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
-            <div className='absolute bottom-2 right-2 sm:bottom-4 sm:right-4 flex items-center gap-6'>
-              {!hideCheckCircle && (
-                <span
-                  onClick={handleDeleteRecord}
-                  title='标记已看'
-                  className='inline-flex items-center justify-center pointer-events-auto'
-                >
-                  <CheckCircleCustom />
-                </span>
-              )}
-              {favorited && (
-                <span className='inline-flex w-4 h-4 sm:w-6 sm:h-6 pointer-events-none' />
-              )}
-              {!favorited && (
-                <span
-                  onClick={handleToggleFavorite}
-                  title={favorited ? '移除收藏' : '加入收藏'}
-                  className='inline-flex items-center justify-center pointer-events-auto'
-                >
-                  <Heart
-                    className={`h-4 w-4 sm:h-6 sm:w-6 stroke-[2] ${
-                      favorited ? 'text-red-500' : 'text-white/90'
-                    }`}
-                    fill={favorited ? 'currentColor' : 'none'}
-                  />
-                </span>
-              )}
-            </div>
           </div>
-
-          {/* 集数指示器 - 绿色小圆球 */}
-          {episodes && episodes > 1 && (
-            <div className='absolute top-2 right-2 w-4 h-4 sm:w-6 sm:h-6 bg-green-500 rounded-full flex items-center justify-center'>
-              <span className='text-white text-[0.5rem] sm:text-xs font-bold'>
-                {episodes}
-              </span>
-            </div>
-          )}
-
-          {/* 播放进度条 */}
-          {progress !== undefined && (
-            <div className='absolute bottom-0 left-0 right-0 h-1 bg-gray-300 dark:bg-gray-600'>
-              <div
-                className='h-full bg-blue-500 transition-all duration-300'
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          )}
-
-          {/* 当前播放集数 */}
-          {currentEpisode && episodes && episodes > 1 && (
-            <div className='absolute top-2 left-2 w-4 h-4 sm:w-6 sm:h-6 bg-blue-500 rounded-full flex items-center justify-center'>
-              <span className='text-white text-[0.5rem] sm:text-xs font-bold'>
-                {currentEpisode}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* 信息层 */}
-        <div className='absolute top-[calc(100%+0.5rem)] left-0 right-0'>
-          <div className='flex flex-col items-center justify-center'>
-            <span className='text-gray-900 font-semibold truncate w-full text-center text-xs sm:text-sm dark:text-gray-200'>
-              {title}
-            </span>
-            {source && (
-              <span className='text-gray-500 text-[0.5rem] sm:text-xs w-full text-center mt-1 dark:text-gray-400'>
-                <span className='inline-block border border-gray-500/60 rounded px-2 py-[1px] dark:border-gray-400/60'>
-                  {source_name}
-                </span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* 收藏夹始终显示红心 */}
-        {favorited && (
-          <div className='absolute bottom-2 right-2 sm:bottom-4 sm:right-4 flex items-center'>
-            <span
-              onClick={handleToggleFavorite}
-              title={favorited ? '移除收藏' : '加入收藏'}
-              className='inline-flex items-center justify-center'
-            >
-              <Heart
-                className={`h-4 w-4 sm:h-6 sm:w-6 stroke-[2] ${
-                  favorited ? 'text-red-500' : 'text-white/90'
-                }`}
-                fill={favorited ? 'currentColor' : 'none'}
-              />
-            </span>
-          </div>
-        )}
+        </aside>
+        <div
+          className={`transition-all duration-300 sidebar-offset ${
+            isCollapsed ? 'w-16' : 'w-64'
+          }`}
+        ></div>
       </div>
-    </Link>
+    </SidebarContext.Provider>
   );
-}
+};
+
+export default Sidebar;
