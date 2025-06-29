@@ -1,4 +1,5 @@
-import runtimeConfig from './runtime';
+import fs from 'fs';
+import path from 'path';
 
 export interface ApiSite {
   key: string;
@@ -20,6 +21,7 @@ export interface StorageConfig {
 
 export interface Config {
   cache_time?: number;
+  notice_content?: string;
   api_site: {
     [key: string]: ApiSite;
   };
@@ -35,6 +37,7 @@ export const API_CONFIG = {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
       Accept: 'application/json',
     },
+    maxPages: 50,
   },
   detail: {
     path: '?ac=videolist&ids=',
@@ -46,8 +49,11 @@ export const API_CONFIG = {
   },
 };
 
-// 在模块加载时立即读取 runtime.ts 中的配置并缓存到内存，避免重复文件 I/O
-const cachedConfig: Config = runtimeConfig as unknown as Config;
+// 在模块加载时立即读取配置文件并缓存到内存，后续调用直接返回缓存内容，避免重复文件 I/O
+const configPath = path.join(process.cwd(), 'config.json');
+const cachedConfig: Config = JSON.parse(
+  fs.readFileSync(configPath, 'utf-8')
+) as Config;
 
 export function getConfig(): Config {
   return cachedConfig;
