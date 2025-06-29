@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
 
+import { getRandomImageBaseUrl } from '@/lib/utils';
+
 // 聚合卡需要的基本字段，与搜索接口保持一致
 interface SearchResult {
   id: string;
@@ -10,13 +12,11 @@ interface SearchResult {
   poster: string;
   source: string;
   source_name: string;
-  episodes: string[];
+  episodes?: number;
 }
 
 interface AggregateCardProps {
   /** 同一标题下的多个搜索结果 */
-  query?: string;
-  year?: string;
   items: SearchResult[];
 }
 
@@ -54,31 +54,22 @@ function PlayCircleSolid({
  * 点击播放按钮 -> 跳到第一个源播放
  * 点击卡片其他区域 -> 跳到聚合详情页 (/aggregate)
  */
-const AggregateCard: React.FC<AggregateCardProps> = ({
-  query = '',
-  year = 0,
-  items,
-}) => {
+const AggregateCard: React.FC<AggregateCardProps> = ({ items }) => {
   // 使用列表中的第一个结果做展示 & 播放
   const first = items[0];
   const [playHover, setPlayHover] = useState(false);
   const router = useRouter();
 
   return (
-    <Link
-      href={`/aggregate?q=${encodeURIComponent(
-        query
-      )}&title=${encodeURIComponent(first.title)}${
-        year ? `&year=${encodeURIComponent(year)}` : ''
-      }`}
-    >
+    <Link href={`/aggregate?q=${encodeURIComponent(first.title)}`}>
       <div className='group relative w-full rounded-lg bg-transparent shadow-none flex flex-col'>
         {/* 封面图片 2:3 */}
         <div className='relative aspect-[2/3] w-full overflow-hidden rounded-md'>
           <Image
-            src={first.poster}
+            src={getRandomImageBaseUrl() + first.poster}
             alt={first.title}
             fill
+            loading='lazy'
             className='object-cover'
             unoptimized
           />
@@ -97,9 +88,7 @@ const AggregateCard: React.FC<AggregateCardProps> = ({
                   router.push(
                     `/play?source=${first.source}&id=${
                       first.id
-                    }&title=${encodeURIComponent(first.title)}${
-                      year ? `&year=${year}` : ''
-                    }&from=aggregate`
+                    }&title=${encodeURIComponent(first.title)}&from=aggregate`
                   );
                 }}
                 onMouseEnter={() => setPlayHover(true)}
@@ -114,7 +103,7 @@ const AggregateCard: React.FC<AggregateCardProps> = ({
         {/* 标题 */}
         <div className='absolute top-[calc(100%+0.2rem)] left-0 right-0'>
           <div className='flex flex-col items-center justify-center'>
-            <span className='text-gray-900 font-semibold truncate w-full text-center text-xs sm:text-sm dark:text-gray-200'>
+            <span className='text-gray-900 font-semibold truncate w-full text-center text-xs sm:text-sm'>
               {first.title}
             </span>
           </div>
