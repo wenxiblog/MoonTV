@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 
 import type { PlayRecord } from '@/lib/db.client';
-import { clearAllPlayRecords, getAllPlayRecords } from '@/lib/db.client';
+import { getAllPlayRecords } from '@/lib/db.client';
 
 import ScrollableRow from '@/components/ScrollableRow';
 import VideoCard from '@/components/VideoCard';
@@ -71,22 +71,9 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
 
   return (
     <section className={`mb-8 ${className || ''}`}>
-      <div className='mb-4 flex items-center justify-between'>
-        <h2 className='text-xl font-bold text-gray-800 dark:text-gray-200'>
-          继续观看
-        </h2>
-        {!loading && playRecords.length > 0 && (
-          <button
-            className='text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            onClick={async () => {
-              await clearAllPlayRecords();
-              setPlayRecords([]);
-            }}
-          >
-            清空
-          </button>
-        )}
-      </div>
+      <h2 className='mb-4 text-xl font-bold text-gray-800 text-left'>
+        继续观看
+      </h2>
       <ScrollableRow>
         {loading
           ? // 加载状态显示灰色占位数据
@@ -95,11 +82,11 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                 key={index}
                 className='min-w-[96px] w-24 sm:min-w-[180px] sm:w-44'
               >
-                <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 animate-pulse dark:bg-gray-800'>
-                  <div className='absolute inset-0 bg-gray-300 dark:bg-gray-700'></div>
+                <div className='relative aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200 animate-pulse'>
+                  <div className='absolute inset-0 bg-gray-300'></div>
                 </div>
-                <div className='mt-2 h-4 bg-gray-200 rounded animate-pulse dark:bg-gray-800'></div>
-                <div className='mt-1 h-3 bg-gray-200 rounded animate-pulse dark:bg-gray-800'></div>
+                <div className='mt-2 h-4 bg-gray-200 rounded animate-pulse'></div>
+                <div className='mt-1 h-3 bg-gray-200 rounded animate-pulse'></div>
               </div>
             ))
           : // 显示真实数据
@@ -114,7 +101,6 @@ export default function ContinueWatching({ className }: ContinueWatchingProps) {
                     id={id}
                     title={record.title}
                     poster={record.cover}
-                    year={record.year}
                     source={source}
                     source_name={record.source_name}
                     progress={getProgress(record)}
