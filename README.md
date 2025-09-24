@@ -71,7 +71,6 @@
 | :---------------: | :----: | :----: | :-----: | :------------: |
 |   localstorage    |   ✅   |   ✅   |   ✅    |       ✅       |
 |    原生 redis     |   ✅   |        |         |                |
-| ~~Cloudflare D1~~ |        |        |         |       ✅       |
 |   Upstash Redis   |   ☑️   |   ✅   |   ✅    |       ☑️       |
 
 ✅：经测试支持
@@ -123,30 +122,6 @@
 3. 返回你的 Netlify 项目，**Project Configuration → Environment variables** 新增环境变量 **UPSTASH_URL 和 UPSTASH_TOKEN**，值为第二步复制的 endpoint 和 token
 4. 设置环境变量 NEXT_PUBLIC_STORAGE_TYPE，值为 **upstash**；设置 USERNAME 和 PASSWORD 作为站长账号
 5. 重试部署
-
-### Cloudflare 部署（**不支持，详情请看置顶 issue**）
-
-~~**Cloudflare Pages 的环境变量尽量设置为密钥而非文本**~~
-
-#### ~~普通部署（localstorage）~~
-
-~~1. **Fork** 本仓库到你的 GitHub 账户。~~
-~~2. 登陆 [Cloudflare](https://cloudflare.com)，点击 **计算（Workers）-> Workers 和 Pages**，点击创建~~
-~~3. 选择 Pages，导入现有的 Git 存储库，选择 Fork 后的仓库~~
-~~4. 构建命令填写 **pnpm install --frozen-lockfile && pnpm run pages:build**，预设框架为无，**构建输出目录**为 `.vercel/output/static`~~
-~~5. 保持默认设置完成首次部署。进入设置，将兼容性标志设置为 `nodejs_compat`，无需选择，直接粘贴~~
-~~6. 首次部署完成后进入设置，新增 PASSWORD 密钥（变量和机密下），而后重试部署。~~
-~~7. 如需自定义 `config.json`，请直接修改 Fork 后仓库中该文件。~~
-~~8. 每次 Push 到 `main` 分支将自动触发重新构建。~~
-
-#### ~~D1 支持~~
-
-~~0. 完成普通部署并成功访问~~
-~~1. 点击 **存储和数据库 -> D1 SQL 数据库**，创建一个新的数据库，名称随意~~
-~~2. 进入刚创建的数据库，点击左上角的 Explore Data，将[D1 初始化](D1初始化.md) 中的内容粘贴到 Query 窗口后点击 **Run All**，等待运行完成~~
-~~3. 返回你的 pages 项目，进入 **设置 -> 绑定**，添加绑定 D1 数据库，选择你刚创建的数据库，变量名称填 **DB**~~
-~~4. 设置环境变量 NEXT_PUBLIC_STORAGE_TYPE，值为 **d1**；设置 USERNAME 和 PASSWORD 作为站长账号~~
-~~5. 重试部署~~
 
 ### Docker 部署
 
